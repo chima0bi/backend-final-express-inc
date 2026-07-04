@@ -74,16 +74,9 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
       .json({ message: "You are not part of this booking" });
   }
 
-  const providerOnlyActions = [
-    "accepted",
-    "declined",
-    "in-progress",
-    "completed",
-  ];
+ const providerOnlyActions = ["accepted", "declined", "in-progress"];
   if (providerOnlyActions.includes(status) && !isProvider && !isAdmin) {
-    return res
-      .status(403)
-      .json({ message: "Only the provider can perform this action" });
+    return res.status(403).json({ message: "Only the provider can perform this action" });
   }
 
   const allowedNext = VALID_TRANSITIONS[booking.status] || [];
@@ -103,9 +96,26 @@ export const updateBookingStatus = asyncHandler(async (req, res) => {
     booking.cancellationReason = cancellationReason || "No reason provided";
   }
   if (status === "completed") {
-    await ProviderListing.findByIdAndUpdate(booking.listing, {
-      $inc: { bookingCount: 1 },
-    });
+    await ProviderListing.findByIdAndUpdate(booking.listing, { $inc: { bookingCount: 1 } });
+    try {
+      const Payment = (await import("../model/payment_model.js")).default;
+      const { initiateTransfer } = await import("../utils/paystack.js");
+      const User = (await import("../model/user_model.js")).default;
+      const payment = await Payment.findOne({ booking: booking._id });
+      const provider = await User.findById(booking.provider).select("paymentDetails");
+      if (payment && payment.status === "paid" && provider?.paymentDetails?.paystackRecipientCode) {
+        await initiateTransfer({
+          amountNaira: payment.providerPayout,
+          recipientCode: provider.paymentDetails.paystackRecipientCode,
+          reason: `Payout for completed booking ${booking._id}`,
+        });
+        payment.status = "released";
+        payment.releasedAt = new Date();
+        await payment.save();
+      }
+    } catch (payoutErr) {
+      console.warn("Auto-payout failed for booking", booking._id, payoutErr.message);
+    }
   }
 
   await booking.save();
