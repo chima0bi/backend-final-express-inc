@@ -30,6 +30,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 // ── CORS ────────────────────────────────────────────────────────────────
 const AllowedOrigins = [
   process.env.ORIGIN_LOCAL,
