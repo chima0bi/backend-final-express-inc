@@ -29,7 +29,7 @@ router.post(
 router.get(
   "/mine/customer",
   authenticate,
-  allowRoles("user"),
+  allowRoles("user", "provider"),
   getMyBookingsAsCustomer,
 );
 router.get(
