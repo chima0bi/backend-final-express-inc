@@ -148,19 +148,19 @@ export const refresh = asyncHandler(async (req, res) => {
 
   if (!session || !session.user) {
     // Token not found = already logged out or stolen/invalid
-    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth" });
+    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth", httpOnly: true, secure: true, sameSite: "none" });
     return res.status(401).json({ message: "Session not found. Please log in again.", code: "SESSION_NOT_FOUND" });
   }
 
   if (session.expiresAt < new Date()) {
     await session.deleteOne();
-    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth" });
+    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth", httpOnly: true, secure: true, sameSite: "none" });
     return res.status(401).json({ message: "Session expired. Please log in again.", code: "SESSION_EXPIRED" });
   }
 
   if (!session.user.isActive) {
     await session.deleteOne();
-    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth" });
+    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth", httpOnly: true, secure: true, sameSite: "none" });
     return res.status(403).json({ message: "Account suspended.", code: "SUSPENDED" });
   }
 
@@ -191,7 +191,7 @@ export const logout = asyncHandler(async (req, res) => {
     await Session.deleteOne({ refreshTokenHash: tokenHash });
   }
 
-  res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth" });
+  res.clearCookie(REFRESH_TOKEN_COOKIE, { path: "/api/auth", httpOnly: true, secure: true, sameSite: "none" });
   return res.status(200).json({ message: "Logged out successfully" });
 });
 
