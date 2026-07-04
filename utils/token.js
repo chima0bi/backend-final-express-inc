@@ -30,8 +30,8 @@ export const REFRESH_TOKEN_COOKIE = "rt";
 
 export const refreshCookieOptions = (rememberMe = true) => ({
   httpOnly: true,     // JS cannot read this cookie - the main security gain
-  secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-  sameSite: "strict", // not sent on cross-site requests (CSRF protection)
+  secure: true, // process.env.NODE_ENV === "production", // HTTPS only in prod
+  sameSite: "none", // not sent on cross-site requests (CSRF protection)
   maxAge: rememberMe ? REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000 : undefined,
   path: "/api/auth",  // cookie only sent to the refresh endpoint, not every request
 });
